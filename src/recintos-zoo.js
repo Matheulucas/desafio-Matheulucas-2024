@@ -31,26 +31,32 @@ class RecintosZoo {
       },
     ];
   }
+
   analisaRecintos(tipoAnimal, quantidade) {
     const animal = this.animais[tipoAnimal];
     if (!animal) {
       return { erro: "Animal inválido" };
     }
+
     if (quantidade <= 0 || !Number.isInteger(quantidade)) {
       return { erro: "Quantidade inválida" };
     }
+
     const recintosViaveis = this.recintos.filter((recinto) =>
       this.podeAdicionarAnimal(recinto, tipoAnimal, quantidade)
     );
+
     if (recintosViaveis.length === 0) {
       return { erro: "Não há recinto viável" };
     }
+
     return {
       recintosViaveis: recintosViaveis.map((recinto) => {
         const espacoOcupado = recinto.animais.reduce(
           (soma, a) => soma + this.animais[a.especie].tamanho * a.quantidade,
           0
         );
+
         const espacoRestante =
           recinto.tamanhoTotal -
           espacoOcupado -
@@ -80,11 +86,13 @@ class RecintosZoo {
       (soma, a) => soma + this.animais[a.especie].tamanho * a.quantidade,
       0
     );
+
     const espacoExtra =
       recinto.animais.length > 0 && tipoAnimal !== recinto.animais[0].especie
         ? 1
         : 0;
     const espacoRestante = recinto.tamanhoTotal - espacoOcupado - espacoExtra;
+
     if (espacoNecessario > espacoRestante) {
       return false;
     }
@@ -110,6 +118,65 @@ class RecintosZoo {
       recinto.animais.length > 0
     ) {
       return false;
+    }
+
+    return true;
+  }
+  verificaConfortoDosAnimais(recinto, tipoAnimal, quantidade) {
+    const novoAnimal = this.animais[tipoAnimal];
+
+    if (novoAnimal.carnivoro) {
+      const outroAnimalPresente = recinto.animais.some(
+        (a) => a.especie !== tipoAnimal
+      );
+
+      if (outroAnimalPresente) {
+        return false;
+      }
+    }
+
+    if (
+      tipoAnimal === "MACACO" &&
+      quantidade === 1 &&
+      recinto.animais.length === 0
+    ) {
+      return false;
+    }
+
+    if (
+      tipoAnimal === "HIPOPOTAMO" &&
+      recinto.bioma !== "savana e rio" &&
+      recinto.animais.length > 0
+    ) {
+      return false;
+    }
+
+    for (let a of recinto.animais) {
+      const animalPresente = this.animais[a.especie];
+
+      if (animalPresente.carnivoro && tipoAnimal !== a.especie) {
+        return false;
+      }
+
+      if (
+        a.especie === "MACACO" &&
+        a.quantidade === 1 &&
+        quantidade === 1 &&
+        tipoAnimal !== "MACACO"
+      ) {
+        return false;
+      }
+
+      if (
+        recinto.animais.length > 1 &&
+        a.especie !== tipoAnimal &&
+        recinto.tamanhoTotal <
+          a.quantidade * animalPresente.tamanho +
+            quantidade * novoAnimal.tamanho +
+            1
+      ) {
+        return false;
+      }
     }
 
     return true;
